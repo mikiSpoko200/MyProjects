@@ -9,6 +9,7 @@ from typing import NewType
 from typing import List, Tuple
 from copy import deepcopy, copy
 from utility import add_cards, add_cards_dealer
+import colours as col
 
 
 # UWAGA poniższy kod korzysta z pewnych założeń, których spełnienie jest konieczne do poprawnego działania programu;
@@ -123,13 +124,25 @@ class Game:
         for player in self.player_list:
             print(f"{player.name}'s turn\n choose your action: ")
             if player.can_hit():
-                print("1) hit\n")
+                col_code = col.GREEN
+            else:
+                col_code = col.RED
+            print(col_code + "1) hit\n" + col.WHITE)
             if player.can_double_down():
-                print("2) double down\n")
+                col_code = col.GREEN
+            else:
+                col_code = col.RED
+            print(col_code + "2) double down\n" + col.WHITE)
             if player.can_split():
-                print("3) split\n")
+                col_code = col.GREEN
+            else:
+                col_code = col.RED
+            print(col_code + "3) split\n" + col.WHITE)
             if player.can_insure(dealer=dealer):
-                print("4) insure\n")
+                col_code = col.GREEN
+            else:
+                col_code = col.RED
+            print(col_code + "4) insure\n" + col.WHITE)
             print("0) stand")
 
             choice = input("I choose: ")
@@ -144,7 +157,7 @@ class Game:
             if choice == 0:
                 player.stand()
 
-    def calculate_budgets(self):  # OBLICZA BUDŻET PO ODJĘCIU ZAKŁĄDU (PRZY WEJŚCIU DO NOWEJ RUNDY)
+    def subtract_bet_from_budget(self):  # OBLICZA BUDŻET PO ODJĘCIU ZAKŁĄDU (PRZY WEJŚCIU DO NOWEJ RUNDY)
         for player in self.player_list:
             player.budget -= player.bet
 
@@ -152,6 +165,9 @@ class Game:
         for player in self.player_list:
             if player.budget <= player.bet:  # POWINNO BYĆ <= min_bet (zakład ma jakąś minimalną wartość)
                 print(f"{player.name} is broken!")
+
+    def after_each_move(self):
+
 
     # def calculate_round_outcome(self):
 
@@ -269,6 +285,7 @@ class Player(Entity):
         self.had_split: bool = False  # TE ZMIENNE PRZECHOWUJĄ INFORMACJE O RUCHACH GRACZA TZN
         self.had_stood: bool = False  # JAKICH METOD UŻYŁ POTRZEBNE DO SPRAWDZANIA CZY NP GRACZ MOŻE
         self.had_doubled: bool = False  # SPLITOWAĆ (MOŻLIWE TYLKO W "1" TURZE)
+        self.can_enter_new_round = True  # jeśli false gracz przegrywa
 
     def __str__(self):
         report = "Player __str__ called"
@@ -280,8 +297,16 @@ class Player(Entity):
     # USTAWIA WARTOŚĆ ZAKŁADU    /    PATRZĄC Z PERSPEKTYWY CZASU TA FUNKCJA JEST DO WYWALENIA DO POLA BĘDZIE SIĘ
     #                            /    ODWOŁYWAĆ BEZPOŚREDNIO PRZEZ PLAYER.BET = NOWA_WARTOŚĆ
 
-    def set_bet(self, new_bet):
-        self.bet = new_bet
+    def set_bet(self, new_bet=None):
+        if new_bet is None:
+            new_bet = input(col.GREEN + "Input new bet value: \n")
+
+        if self.budget >= new_bet >= BET_MIN:
+            self.bet = new_bet
+        else:
+            print(col.RED + "You cannot set your bet to that value\n")
+
+
 
     # METODY SPRAWDZAJĄCE:
 
@@ -311,8 +336,8 @@ class Player(Entity):
     # SPRAWDZA CZY GRACZ MOŻE UŻYĆ INSURANCE
 
     def can_insure(self, dealer):
-        if can_insure(dealer=dealer) and self.budget >= 0.5*self.bet:
-            self.insurance = 0.5*self.bet
+        if can_insure(dealer=dealer) and self.budget >= 0.5 * self.bet:
+            self.insurance = 0.5 * self.bet
             self.budget -= self.insurance
 
     # METODY WŁAŚCIWE
@@ -322,7 +347,7 @@ class Player(Entity):
             self.draw()
             self.had_hit = True
         else:
-            print('After doubling down you cannot draw any more cards')
+            print(col.RED + 'After doubling down you cannot draw any more cards')
 
     def stand(self):
         self.had_stood = True
