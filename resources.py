@@ -29,4 +29,4 @@ DEFAULT_BUDGET = [200]
 NUM_PLAYERS = 1  # musi być mniejszy niż 8 bo tak
 NUM_DECKS = 2
 
-BET_MIN = 10
+BET_MIN = 5

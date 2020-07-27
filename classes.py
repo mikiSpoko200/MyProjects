@@ -35,6 +35,44 @@ def create_deck():
     return sample(NUM_DECKS * DEFAULT_DECK, NUM_DECKS * DEFAULT_DECK_LEN)
 
 
+def check_set_ace_value(player):
+    cards = player.cards
+    for index, card in enumerate(cards):
+        if card[1] == 0:
+            print_stat(player, True)
+            print("For how many points should the ace count?")
+            print("\t1) 1 point\n")
+            print("\t2) 11 points\n")
+            run = True
+            value = 11
+            _, _, colour = card
+            while run:
+                choice = input("I choose: ")
+                if choice == "1":
+                    value = 1
+                    run = False
+                if choice == "2":
+                    value = 11
+                    run = False
+                else:
+                    print("Invalid input number! Please try again.")
+            new_card = ("Ace", value, colour)
+            cards.pop(index)
+            cards.insert(index, new_card)
+
+
+def print_stat(player, ace_case=False):
+    if ace_case is False:
+        score = player.score
+    else:
+        score = "?"
+
+    stats = "\n"
+    stats += col.MAGENTA + f"{player.name}" + col.WHITE + "'s turn       " + col.MAGENTA + "(˵ ͡° ͜ʖ ͡°˵)\n" \
+             + col.WHITE + f"\n\tscore: {score}\n\tbet: {player.bet}\n\tbudget: {player.budget}\n"
+    print(stats)
+
+
 DECK = deepcopy(create_deck())
 
 
@@ -97,9 +135,6 @@ class Game:
 
         print(beg + cards + end)
 
-    def print_stat(self):
-        raise NotImplementedError
-
     # PONIŻSZE METODY SĄ DO DOPRACOWANIA / OBGADANIA Z KIMŚ KTO OGARNIA PĘTLĘ GRY
 
     def first_round(self) -> None:
@@ -107,24 +142,21 @@ class Game:
             player.draw_hand()
         self.dealer.draw_hand()
         self.subtract_bets_from_budgets()
-        self.calculate_scores()
         self.print_table()
+        self.calculate_and_verify_scores()
         self.player_action_loop()
-
 
     def player_action_loop(self):
         for player in self.player_list:
-            stats = "\n"
-            stats += col.MAGENTA + f"{player.name}" + col.WHITE + "'s turn       " + col.MAGENTA + "(˵ ͡° ͜ʖ ͡°˵)\n"\
-                + col.WHITE + f"score: {player.score}\nbet: {player.bet}\nbudget: {player.budget}\n"
-            print(stats)
+            print_stat(player)
             self.round_menu(player)
 
-    def calculate_scores(self):
-        for player in self.player_list:
-            player.calculate_score()
+    def calculate_and_verify_scores(self):
+        for index, player in enumerate(self.player_list):
+            player.add_points()
             if player.score > 21:
                 print(col.RED + "Busted! (score > 21)")
+                self.losers.append(self.player_list.pop(index))
 
     def enter_new_round(self):
         for player in self.player_list:
@@ -135,31 +167,28 @@ class Game:
                 self.losers.append(player)
                 self.player_list.remove(player)
 
-
-
     def round_menu(self, player):
-        print(f"{player.name}'s turn\n choose your action: ")
         if player.can_hit():
             col_code = col.GREEN
         else:
             col_code = col.RED
-        print(col_code + "1) hit\n" + col.WHITE)
+        print(col_code + "\t\t1) hit" + col.WHITE)
         if player.can_double_down():
             col_code = col.GREEN
         else:
             col_code = col.RED
-        print(col_code + "2) double down\n" + col.WHITE)
+        print(col_code + "\t\t2) double down" + col.WHITE)
         if player.can_split():
             col_code = col.GREEN
         else:
             col_code = col.RED
-        print(col_code + "3) split\n" + col.WHITE)
-        if player.can_insure(dealer=self.dealer):
+        print(col_code + "\t\t3) split" + col.WHITE)
+        if can_insure(dealer=self.dealer):
             col_code = col.GREEN
         else:
             col_code = col.RED
-        print(col_code + "4) insure\n" + col.WHITE)
-        print("0) stand")
+        print(col_code + "\t\t4) insure" + col.WHITE)
+        print(col.GREEN + "\t\t0) stand\n" + col.WHITE)
 
         choice = input("I choose: ")
         if choice == 1:
@@ -169,14 +198,13 @@ class Game:
         if choice == 3:
             player.split()
         if choice == 4:
-            pass
+            player.insurance()
         if choice == 0:
             player.stand()
 
     def subtract_bets_from_budgets(self):  # OBLICZA BUDŻET PO ODJĘCIU ZAKŁĄDU (PRZY WEJŚCIU DO NOWEJ RUNDY)
         for player in self.player_list:
             player.budget -= player.bet
-            self.player_list.remove(player)
 
     def check_budgets(self):  # SPRAWDZA CZY GRACZA STAĆ NA WEJŚCIE DO NOWEJ RUNDY
         for player in self.player_list:
@@ -214,26 +242,6 @@ class Game:
                 self.player_list.insert(player_index + 1, hands[1])
             else:
                 pass
-
-
-class Entity(object):  # KLASA MACIERZYSTA DLA KLAS PLAYER I DEALER
-
-    def __init__(self, cards=None, score=0):
-        self.cards = cards if cards is not None else []
-        self.score = score
-
-    def calculate_score(self):
-        self.score = 0
-        for card in self.cards:
-            _, point, _ = card
-            self.score += point
-
-    def draw(self):
-        self.cards.append(DECK.pop(0))
-
-    def draw_hand(self):
-        self.draw()
-        self.draw()
 
 
 class SharedBudget:  # KLASA UŻYWANA DO TWORZENIA WSPÓŁDZIELONYCH BUDŻETÓW (DLA SPLITU)
@@ -280,6 +288,27 @@ class SharedBudget:  # KLASA UŻYWANA DO TWORZENIA WSPÓŁDZIELONYCH BUDŻETÓW 
         self.budget = x
 
 
+class Entity(object):  # KLASA MACIERZYSTA DLA KLAS PLAYER I DEALER
+
+    def __init__(self, cards=None, score=0):
+        self.cards = cards if cards is not None else []
+        self.score = score
+
+    def add_points(self):
+        self.score = 0
+        check_set_ace_value(self)
+        for card in self.cards:
+            _, points, _ = card
+            self.score += points
+
+    def draw(self):
+        self.cards.append(DECK.pop(0))
+
+    def draw_hand(self):
+        self.draw()
+        self.draw()
+
+
 def can_insure(dealer):
     if dealer.cards[0][0] == "Ace":
         return True
@@ -321,6 +350,29 @@ class Player(Entity):
         else:
             print(col.RED + "You cannot set your bet to that value\n")
 
+    def win(self):
+        self.budget += self.bet
+        self.cards = []
+        self.insurance = 0
+        self.do_split: bool = False
+        self.had_hit: bool = False
+        self.had_split: bool = False
+        self.had_stood: bool = False
+        self.had_doubled: bool = False
+        self.can_enter_new_round = True
+
+    def loss(self):
+        if self.insurance:
+            self.budget += 2 * self.insurance
+        self.cards = []
+        self.insurance = 0
+        self.do_split: bool = False
+        self.had_hit: bool = False
+        self.had_split: bool = False
+        self.had_stood: bool = False
+        self.had_doubled: bool = False
+        self.can_enter_new_round = True
+
     # METODY SPRAWDZAJĄCE:
 
     def can_hit(self):
@@ -348,10 +400,7 @@ class Player(Entity):
 
     # SPRAWDZA CZY GRACZ MOŻE UŻYĆ INSURANCE
 
-    def can_insure(self, dealer):
-        if can_insure(dealer=dealer) and self.budget >= 0.5 * self.bet:
-            self.insurance = 0.5 * self.bet
-            self.budget -= self.insurance
+    # ZWYKŁA FUNKCJA
 
     # METODY WŁAŚCIWE
 
@@ -378,6 +427,10 @@ class Player(Entity):
             self.do_split = True
         else:
             print('You cannot split')
+
+    def insurance(self):
+        self.insurance = 0.5 * self.bet
+        self.budget -= self.insurance
 
 
 class Dealer(Entity):
