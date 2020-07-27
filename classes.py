@@ -98,7 +98,7 @@ class Game:
         print(beg + cards + end)
 
     def print_stat(self):
-
+        raise NotImplementedError
 
     # PONIŻSZE METODY SĄ DO DOPRACOWANIA / OBGADANIA Z KIMŚ KTO OGARNIA PĘTLĘ GRY
 
