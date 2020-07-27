@@ -68,6 +68,7 @@ class Game:
         self.__players_names = players_names if players_names is not None else create_player_names()
         self.__budgets = budgets if budgets is not None else copy(NUM_PLAYERS * DEFAULT_BUDGET)
 
+        self.losers = []
         self.shared_budgets = {}
         self.dealer = Dealer(dealer_cards) if dealer_cards is not None else Dealer(DEFAULT_CARDS[0], 0)
         self.player_list = create_players(scores=self.__scores, budgets=self.__budgets,
@@ -96,21 +97,34 @@ class Game:
 
         print(beg + cards + end)
 
+    def print_stat(self):
+
+
     # PONIŻSZE METODY SĄ DO DOPRACOWANIA / OBGADANIA Z KIMŚ KTO OGARNIA PĘTLĘ GRY
 
     def first_round(self) -> None:
         for player in self.player_list:
             player.draw_hand()
         self.dealer.draw_hand()
+        self.subtract_bets_from_budgets()
+        self.calculate_scores()
+        self.print_table()
+        self.player_action_loop()
+
+
+    def player_action_loop(self):
+        for player in self.player_list:
+            stats = "\n"
+            stats += col.MAGENTA + f"{player.name}" + col.WHITE + "'s turn       " + col.MAGENTA + "(˵ ͡° ͜ʖ ͡°˵)\n"\
+                + col.WHITE + f"score: {player.score}\nbet: {player.bet}\nbudget: {player.budget}\n"
+            print(stats)
+            self.round_menu(player)
 
     def calculate_scores(self):
         for player in self.player_list:
             player.calculate_score()
-
-    def check_score(self):
-        for player in self.player_list:
-            if player.get_score() > 21:
-                return "Busted! (score > 21)"
+            if player.score > 21:
+                print(col.RED + "Busted! (score > 21)")
 
     def enter_new_round(self):
         for player in self.player_list:
@@ -118,56 +132,60 @@ class Game:
                 player.budget -= player.bet
             else:
                 print(f"{player.name} can't afford a new bet and is out of game!")
+                self.losers.append(player)
                 self.player_list.remove(player)
 
-    def round_menu(self, dealer):
-        for player in self.player_list:
-            print(f"{player.name}'s turn\n choose your action: ")
-            if player.can_hit():
-                col_code = col.GREEN
-            else:
-                col_code = col.RED
-            print(col_code + "1) hit\n" + col.WHITE)
-            if player.can_double_down():
-                col_code = col.GREEN
-            else:
-                col_code = col.RED
-            print(col_code + "2) double down\n" + col.WHITE)
-            if player.can_split():
-                col_code = col.GREEN
-            else:
-                col_code = col.RED
-            print(col_code + "3) split\n" + col.WHITE)
-            if player.can_insure(dealer=dealer):
-                col_code = col.GREEN
-            else:
-                col_code = col.RED
-            print(col_code + "4) insure\n" + col.WHITE)
-            print("0) stand")
 
-            choice = input("I choose: ")
-            if choice == 1:
-                player.hit()
-            if choice == 2:
-                player.double_down()
-            if choice == 3:
-                player.split()
-            if choice == 4:
-                pass
-            if choice == 0:
-                player.stand()
 
-    def subtract_bet_from_budget(self):  # OBLICZA BUDŻET PO ODJĘCIU ZAKŁĄDU (PRZY WEJŚCIU DO NOWEJ RUNDY)
+    def round_menu(self, player):
+        print(f"{player.name}'s turn\n choose your action: ")
+        if player.can_hit():
+            col_code = col.GREEN
+        else:
+            col_code = col.RED
+        print(col_code + "1) hit\n" + col.WHITE)
+        if player.can_double_down():
+            col_code = col.GREEN
+        else:
+            col_code = col.RED
+        print(col_code + "2) double down\n" + col.WHITE)
+        if player.can_split():
+            col_code = col.GREEN
+        else:
+            col_code = col.RED
+        print(col_code + "3) split\n" + col.WHITE)
+        if player.can_insure(dealer=self.dealer):
+            col_code = col.GREEN
+        else:
+            col_code = col.RED
+        print(col_code + "4) insure\n" + col.WHITE)
+        print("0) stand")
+
+        choice = input("I choose: ")
+        if choice == 1:
+            player.hit()
+        if choice == 2:
+            player.double_down()
+        if choice == 3:
+            player.split()
+        if choice == 4:
+            pass
+        if choice == 0:
+            player.stand()
+
+    def subtract_bets_from_budgets(self):  # OBLICZA BUDŻET PO ODJĘCIU ZAKŁĄDU (PRZY WEJŚCIU DO NOWEJ RUNDY)
         for player in self.player_list:
             player.budget -= player.bet
+            self.player_list.remove(player)
 
     def check_budgets(self):  # SPRAWDZA CZY GRACZA STAĆ NA WEJŚCIE DO NOWEJ RUNDY
         for player in self.player_list:
             if player.budget <= player.bet:  # POWINNO BYĆ <= min_bet (zakład ma jakąś minimalną wartość)
+                Player.can_enter_new_round = False
                 print(f"{player.name} is broken!")
 
     def after_each_move(self):
-
+        raise NotImplementedError
 
     # def calculate_round_outcome(self):
 
@@ -209,9 +227,6 @@ class Entity(object):  # KLASA MACIERZYSTA DLA KLAS PLAYER I DEALER
         for card in self.cards:
             _, point, _ = card
             self.score += point
-
-    def get_score(self):
-        return self.score
 
     def draw(self):
         self.cards.append(DECK.pop(0))
@@ -306,8 +321,6 @@ class Player(Entity):
         else:
             print(col.RED + "You cannot set your bet to that value\n")
 
-
-
     # METODY SPRAWDZAJĄCE:
 
     def can_hit(self):
@@ -382,7 +395,7 @@ class Dealer(Entity):
         return self.cards[0]
 
     def check_if_score_higher_than_or_eq_to_17(self):
-        if self.get_score() >= 17:
+        if self.score >= 17:
             return True
         else:
             return False

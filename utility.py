@@ -60,9 +60,4 @@ def add_cards(cards):
     added_cards += "\n|    "
     return added_cards
 
-def print_stat(player):
-    stats = "\n"
-    stats += col.MAGENTA + f"{player.name}" + col.WHITE + "'s turn       " + col.MAGENTA + "(˵ ͡° ͜ʖ ͡°˵)\n"\
-            + col.WHITE + f"score: {player.score}\nbet: {player.bet}\nbudget: {player.budget}\n"
 
-    return stats
