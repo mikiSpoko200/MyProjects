@@ -7,9 +7,8 @@
 
 import classes as cl
 
-Game = cl.Game()
-
-
-print(Game.dealer.__class__.__name__)
-
+game = cl.Game()
+game.dealer.cards.append(('6', 6, 'Diamond'))
+game.dealer.cards.append(('7', 7, 'Diamond'))
+print(cl.add_cards(game.dealer.cards))
 

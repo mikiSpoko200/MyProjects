@@ -36,45 +36,23 @@ def create_deck():
     return sample(NUM_DECKS * DEFAULT_DECK, NUM_DECKS * DEFAULT_DECK_LEN)
 
 
-def check_set_ace_value(player):
-    cards = player.cards
+def score_without_aces(cards):
+    aces_with_indexes = {}
+    score = 0
     for index, card in enumerate(cards):
         if card[1] == 0:
-            print_stat(player, True)
-            print("For how many points should the ace count?")
-            print("\t1) 1 point\n")
-            print("\t2) 11 points\n")
-            run = True
-            value = 11
-            _, _, colour = card
-            while run:
-                choice = input("I choose: ")
-                if choice == "1":
-                    value = 1
-                    run = False
-                if choice == "2":
-                    value = 11
-                    run = False
-                else:
-                    print("Invalid input number! Please try again.")
-            new_card = ("Ace", value, colour)
-            cards.pop(index)
-            cards.insert(index, new_card)
+            aces_with_indexes[index] = card
+            cards.remove(card)
+        else:
+            _, points, _ = card
+            score += points
+    return score, aces_with_indexes
 
 
-def set_ace_for_daeler(dealer):
-    raise NotImplementedError
-
-
-def print_stat(player, ace_case=False):
-    if ace_case is False:
-        score = player.score
-    else:
-        score = "?"
-
+def print_stat(player):
     stats = "\n"
     stats += col.MAGENTA + f"{player.name}" + col.WHITE + "'s turn       " + col.MAGENTA + "(˵ ͡° ͜ʖ ͡°˵)\n" \
-             + col.WHITE + f"\n\tscore: {score}\n\tbet: {player.bet}\n\tbudget: {player.budget}\n"
+             + col.WHITE + f"\n\tscore: {player.score}\n\tbet: {player.bet}\n\tbudget: {player.budget}\n"
     print(stats)
 
 
@@ -112,6 +90,7 @@ class Game:
         self.__budgets = budgets if budgets is not None else copy(NUM_PLAYERS * DEFAULT_BUDGET)
 
         self.pl_stood = []
+        self.broken = []
         self.losers = []
         self.shared_budgets = {}
         self.dealer = Dealer(dealer_cards) if dealer_cards is not None else Dealer(DEFAULT_CARDS[0], 0)
@@ -127,17 +106,24 @@ class Game:
 
         return f"Created {len(self.player_list)} player(s):" + report
 
+    def run_game(self):
+        raise NotImplementedError
+
     def print_table(self):
         beg = "________________________________________________________\n" \
               "|\n" \
               "|    Dealer's cards:\n"
 
-        cards = "" + add_cards_dealer(self.dealer.cards) + "\n"
+        cards = "" + add_cards_dealer(self.dealer.cards) + "\n" + "|    "
         for player in self.player_list:
-            cards += f"|    {player.name}'s cards:\n"
-            cards += add_cards(player.cards) + "\n"
+            cards += f"{player.name}'s cards:\n"
+            cards += add_cards(player.cards)
+        cards += "\n|_______________________________________\n" if len(self.pl_stood) != 0 else ""
+        for player_st in self.pl_stood:
+            cards += f"|    {player_st.name}'s cards:\n"
+            cards += add_cards(player_st.cards) + "\n"
 
-        end = "|_______________________________________________________\n"
+        end = "\n|_______________________________________________________\n"
 
         print(beg + cards + end)
 
@@ -146,10 +132,14 @@ class Game:
               "|\n" \
               "|    Dealer's cards:\n"
 
-        cards = "" + add_cards(self.dealer.cards) + "\n"
-        for player in self.player_list:
+        cards = "" + add_cards(self.dealer.cards) + "\n" + "|    "
+        for player in self.pl_stood:
             cards += f"|    {player.name}'s cards:\n"
             cards += add_cards(player.cards) + "\n"
+        cards += "\n|_______________________________________\n" if len(self.pl_stood) != 0 else ""
+        for player_st in self.pl_stood:
+            cards += f"|    {player_st.name}'s cards:\n"
+            cards += add_cards(player_st.cards) + "\n"
 
         end = "|_______________________________________________________\n"
 
@@ -157,10 +147,10 @@ class Game:
 
     # PONIŻSZE METODY SĄ DO DOPRACOWANIA / OBGADANIA Z KIMŚ KTO OGARNIA PĘTLĘ GRY
 
-        # Poziom rundy
+    # Poziom rundy
 
     def run_game_loop(self):
-        return not (len(self.player_list) + len(self.pl_stood) == NUM_PLAYERS)
+        return len(self.losers) + len(self.pl_stood) != NUM_PLAYERS
 
     def final_round(self):
         print("All players either lost or chose to stand!\n")
@@ -196,7 +186,7 @@ class Game:
             if player.score > self.dealer.score:
                 player.win()
                 print(f"{player.name} won this round.\n")
-            if player.score < self.dealer:
+            if player.score < self.dealer.score:
                 player.loss()
                 print(f"{player.name} lost this round.\n")
             if player.score == self.dealer.score:
@@ -207,7 +197,7 @@ class Game:
         for index, player in enumerate(self.player_list):
             player.add_points()
             if player.score > 21:
-                print(col.RED + "Busted! (score > 21)" + col.WHITE)
+                print(col.RED + f"{player.name} has busted! (score > 21)" + col.WHITE)
                 self.losers.append(self.player_list.pop(index))
 
         #   Poziom gry
@@ -218,7 +208,7 @@ class Game:
                 player.budget -= player.bet
             else:
                 print(f"{player.name} can't afford a new bet and is out of game!")
-                self.losers.append(player)
+                self.broken.append(player)
                 self.player_list.remove(player)
 
     def round_menu(self, player):
@@ -247,12 +237,12 @@ class Game:
         choice = input("I choose: ")
         if choice == "1":
             player.hit()
-        if choice == "2":                       # TRZEBA BEDZIE TO POPRAWIC
+        if choice == "2":  # TRZEBA BEDZIE TO POPRAWIC
             player.double_down()
         if choice == "3":
             player.split()
         if choice == "4":
-            player.insurance()
+            player.insure()
         if choice == "0":
             player.stand()
             self.pl_stood.append(player)
@@ -345,21 +335,6 @@ class Entity(object):  # KLASA MACIERZYSTA DLA KLAS PLAYER I DEALER
         self.cards = cards if cards is not None else []
         self.score = score
 
-    def sum_points(self):
-        self.score = 0
-        for card in self.cards:
-            _, points, _ = card
-            self.score += points
-
-    def add_points(self):
-        check_set_ace_value(self)
-        self.sum_points()
-
-    def add_points_dealer(self):
-
-        set_ace_for_daeler()
-
-
     def draw(self):
         self.cards.append(DECK.pop(0))
 
@@ -399,6 +374,36 @@ class Player(Entity):
 
     # USTAWIA WARTOŚĆ ZAKŁADU    /    PATRZĄC Z PERSPEKTYWY CZASU TA FUNKCJA JEST DO WYWALENIA DO POLA BĘDZIE SIĘ
     #                            /    ODWOŁYWAĆ BEZPOŚREDNIO PRZEZ PLAYER.BET = NOWA_WARTOŚĆ
+
+    def add_points(self):
+        self.score, aces_to_assign_value = score_without_aces(deepcopy(self.cards))
+        if len(aces_to_assign_value) != 0:
+            print(f"You have {len(aces_to_assign_value)} aces.\n")
+            print("\t1) 1 point\n")
+            print("\t2) 11 points\n")
+            run = True
+            value = 11
+            cards_to_insert = {}
+            for loop, index_ace in enumerate(aces_to_assign_value.items()):
+                index, ace = index_ace
+                _, _, colour = ace
+                while run:
+                    print("Your current score is " + col.GREEN + f"{self.score}\n" + col.WHITE)
+                    print(f"Choose the value of the {loop + 1} ace\n")
+                    choice = input("I choose: ")
+                    if choice == "1":
+                        value = 1
+                        run = False
+                    if choice == "2":
+                        value = 11
+                        run = False
+                    else:
+                        print("Invalid input number! Please try again.")
+                self.score += value
+                cards_to_insert[index] = ("Ace", value, colour)
+            print(f"Your final score is {self.score}")
+            for index, card in cards_to_insert.items():
+                self.cards.insert(index, card)
 
     def set_bet(self, new_bet=None):
         if new_bet is None:
@@ -499,7 +504,7 @@ class Player(Entity):
         else:
             print('You cannot split')
 
-    def insurance(self):
+    def insure(self):
         self.insurance = 0.5 * self.bet
         self.budget -= self.insurance
 
@@ -514,6 +519,17 @@ class Dealer(Entity):
             return True
         else:
             return False
+
+    def add_points(self):
+        self.score, aces_with_indexes = score_without_aces(self.cards)
+        for index, card in aces_with_indexes.items():
+            _, point, colour = card
+            if self.score <= 10:
+                point = 11
+            else:
+                point = 1
+            new_card = "Ace", point, colour
+            self.cards.insert(index, new_card)
 
     def get_visible_card(self):
         return self.cards[0]
@@ -531,4 +547,3 @@ class Dealer(Entity):
         else:
             pass
             print(f"Dealer's final score is {self.score}\n")
-
