@@ -14,23 +14,7 @@ def print_player_list(game):
     for player in game.player_list:
         print(player)
 
-
-def card_to_string(card):
-    value = card[0]
-    colour = card[2]
-    colour_to_ASCII = {"Spade": "♠", "Heart": "♥", "Diamond": "♦", "Club": "♣"}
-    value_to_ASCII = {"Ace": "A", "Jack": "J", "Queen": "Q", "King": "K", "2": "2", "3": "3",
-                      "4": "4", "5": "5", '6': "6", '7': "7", '8': "8", '9': "9", '10': "10"}
-    colour_in_ASCII = colour_to_ASCII[colour]
-    value_in_ASCII = value_to_ASCII[value]
-    if value_in_ASCII != "10":
-        return f"|‾‾‾|\n" \
-               f"|{value_in_ASCII}{colour_in_ASCII} |\n" \
-               f"|___|\n"
-    else:
-        return f"|‾‾‾|\n" \
-               f"|{value_in_ASCII}{colour_in_ASCII}|\n" \
-               f"|___|\n"
+# UŻYWAĆ TYCH FUNKCJI
 
 
 def add_cards_dealer(cards):
@@ -61,4 +45,21 @@ def add_cards(cards):
     added_cards += "\n|    "
     return added_cards
 
+# NIE UŻYWAĆ TEJ FUNKCJI!
 
+def card_to_string(card):
+    value = card[0]
+    colour = card[2]
+    colour_to_ASCII = {"Spade": "♠", "Heart": "♥", "Diamond": "♦", "Club": "♣"}
+    value_to_ASCII = {"Ace": "A", "Jack": "J", "Queen": "Q", "King": "K", "2": "2", "3": "3",
+                      "4": "4", "5": "5", '6': "6", '7': "7", '8': "8", '9': "9", '10': "10"}
+    colour_in_ASCII = colour_to_ASCII[colour]
+    value_in_ASCII = value_to_ASCII[value]
+    if value_in_ASCII != "10":
+        return f"|‾‾‾|\n" \
+               f"|{value_in_ASCII}{colour_in_ASCII} |\n" \
+               f"|___|\n"
+    else:
+        return f"|‾‾‾|\n" \
+               f"|{value_in_ASCII}{colour_in_ASCII}|\n" \
+               f"|___|\n"
