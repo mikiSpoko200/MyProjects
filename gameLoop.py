@@ -5,7 +5,8 @@ import os
 
 Game = cl.Game()
 
+
 Game.first_round()
-while Game.run_game_loop():
+while Game.run_round_loop():
     Game.next_round()
 Game.final_round()

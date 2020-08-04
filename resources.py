@@ -26,7 +26,7 @@ DEFAULT_SCORE = [0]
 DEFAULT_CARDS = [[]]
 DEFAULT_BUDGET = [200]
 
-NUM_PLAYERS = 2  # musi być mniejszy niż 8 bo tak
-NUM_DECKS = 2
+NUM_PLAYERS = 4  # musi być mniejszy niż 8 bo tak
+NUM_DECKS = 1
 
 BET_MIN = 5

@@ -90,8 +90,10 @@ class Game:
         self.__budgets = budgets if budgets is not None else copy(NUM_PLAYERS * DEFAULT_BUDGET)
 
         self.pl_stood = []
-        self.broken = []
-        self.losers = []
+        self.pl_broken = []
+        self.pl_busted = []
+        self.pl_split = []
+
         self.shared_budgets = {}
         self.dealer = Dealer(dealer_cards) if dealer_cards is not None else Dealer(DEFAULT_CARDS[0], 0)
         self.player_list = create_players(scores=self.__scores, budgets=self.__budgets,
@@ -150,7 +152,10 @@ class Game:
     # Poziom rundy
 
     def run_game_loop(self):
-        return len(self.losers) + len(self.pl_stood) != NUM_PLAYERS
+        return len(self.pl_broken) != NUM_PLAYERS
+
+    def run_round_loop(self):
+        return len(self.pl_busted + self.pl_stood) - len(self.pl_split) != NUM_PLAYERS
 
     def final_round(self):
         print("All players either lost or chose to stand!\n")
@@ -178,18 +183,20 @@ class Game:
 
     def player_action_loop(self):
         for player in self.player_list:
+            print(player)
             print_stat(player)
             self.round_menu(player)
 
     def calculate_round_outcome(self):
         for player in self.pl_stood:
-            if player.score > self.dealer.score:
+            difference = abs(self.dealer.score - 21) - abs(player.score - 21)
+            if difference > 0:
                 player.win()
                 print(f"{player.name} won this round.\n")
-            if player.score < self.dealer.score:
+            elif difference == 0:
                 player.loss()
                 print(f"{player.name} lost this round.\n")
-            if player.score == self.dealer.score:
+            else:
                 player.budget += player.bet
                 print(f"{player.name} had the same score as dealer.\n")
 
@@ -198,7 +205,7 @@ class Game:
             player.add_points()
             if player.score > 21:
                 print(col.RED + f"{player.name} has busted! (score > 21)" + col.WHITE)
-                self.losers.append(self.player_list.pop(index))
+                self.pl_busted.append(self.player_list.pop(index))
 
         #   Poziom gry
 
@@ -208,45 +215,59 @@ class Game:
                 player.budget -= player.bet
             else:
                 print(f"{player.name} can't afford a new bet and is out of game!")
-                self.broken.append(player)
+                self.pl_broken.append(player)
                 self.player_list.remove(player)
 
     def round_menu(self, player):
+        can_use = [0]
         if player.can_hit():
             col_code = col.GREEN
+            can_use.append(1)
         else:
             col_code = col.RED
         print(col_code + "\t\t1) hit" + col.WHITE)
         if player.can_double_down():
             col_code = col.GREEN
+            can_use.append(2)
         else:
             col_code = col.RED
         print(col_code + "\t\t2) double down" + col.WHITE)
         if player.can_split():
             col_code = col.GREEN
+            can_use.append(3)
         else:
             col_code = col.RED
         print(col_code + "\t\t3) split" + col.WHITE)
         if can_insure(dealer=self.dealer):
             col_code = col.GREEN
+            can_use.append(4)
         else:
             col_code = col.RED
         print(col_code + "\t\t4) insure" + col.WHITE)
         print(col.GREEN + "\t\t0) stand\n" + col.WHITE)
+        run = True
+        while run:
+            c = input("I choose: ")
+            if c == "1" and 1 in can_use:
+                player.hit()
+                run = False
+            elif c == "2" and 2 in can_use:  # TRZEBA BEDZIE TO POPRAWIC
+                player.double_down()
+                run = False
+            elif c == "3" and 3 in can_use:
+                player.split()
+                run = False
+            elif c == "4" and 4 in can_use:
+                player.insure()
+                run = False
+            elif c == "0":
+                player.stand()
+                run = False
+                self.pl_stood.append(player)
+                self.player_list.remove(player)
+            else:
+                print("Invalid input, please try again.")
 
-        choice = input("I choose: ")
-        if choice == "1":
-            player.hit()
-        if choice == "2":  # TRZEBA BEDZIE TO POPRAWIC
-            player.double_down()
-        if choice == "3":
-            player.split()
-        if choice == "4":
-            player.insure()
-        if choice == "0":
-            player.stand()
-            self.pl_stood.append(player)
-            self.player_list.remove(player)
 
     def subtract_bets_from_budgets(self):  # OBLICZA BUDŻET PO ODJĘCIU ZAKŁĄDU (PRZY WEJŚCIU DO NOWEJ RUNDY)
         for player in self.player_list:
@@ -278,9 +299,10 @@ class Game:
         for player_index, player in enumerate(self.player_list):
             if player.do_split:
                 hands = self.create_hands(player, player_index)
-                self.player_list.pop(player_index)
+                self.pl_split.append(self.player_list.pop(player_index))
                 self.player_list.insert(player_index, hands[0])
                 self.player_list.insert(player_index + 1, hands[1])
+
             else:
                 pass
 
@@ -376,9 +398,9 @@ class Player(Entity):
     #                            /    ODWOŁYWAĆ BEZPOŚREDNIO PRZEZ PLAYER.BET = NOWA_WARTOŚĆ
 
     def add_points(self):
-        self.score, aces_to_assign_value = score_without_aces(deepcopy(self.cards))
+        self.score, aces_to_assign_value = score_without_aces(self.cards)
         if len(aces_to_assign_value) != 0:
-            print(f"You have {len(aces_to_assign_value)} aces.\n")
+            print(f"{self.name} have {len(aces_to_assign_value)} aces.\n")
             print("\t1) 1 point\n")
             print("\t2) 11 points\n")
             run = True
