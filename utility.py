@@ -42,7 +42,7 @@ def add_cards(cards):
     added_cards += "\n|    "
     for card in cards_str:
         added_cards += card[12:17] + "  "
-    added_cards += "\n|    "
+    added_cards += "\n"
     return added_cards
 
 # NIE UŻYWAĆ TEJ FUNKCJI!
