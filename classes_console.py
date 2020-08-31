@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 
-from resources import DEFAULT_DECK, DEFAULT_BET, DEFAULT_CARDS, DEFAULT_SCORE, DEFAULT_BUDGET, NUM_PLAYERS, NUM_DECKS, \
+from resources import DEFAULT_DECK_NA, DEFAULT_BET, DEFAULT_CARDS, DEFAULT_SCORE, DEFAULT_BUDGET, NUM_PLAYERS, NUM_DECKS, \
     DEFAULT_DECK_LEN, BET_MIN
 from random import sample
 from typing import NewType
@@ -33,7 +33,7 @@ def create_player_names():
 # TWORZY TALIĘ DO GRY
 
 def create_deck():
-    return sample(NUM_DECKS * DEFAULT_DECK, NUM_DECKS * DEFAULT_DECK_LEN)
+    return sample(NUM_DECKS * DEFAULT_DECK_NA, NUM_DECKS * DEFAULT_DECK_LEN)
 
 
 def score_without_aces(cards):

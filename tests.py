@@ -1,10 +1,29 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-#
-#   W TYM PLIKU TESTUJE KOD
-#
+class foo:
+    def __init__(self):
+        self.a = 1
 
-import utility as ut
+    def __str__(self):
+        return "__str__() of foo called"
 
-print(ut.add_cards([('Ace', 0, 'Diamond'), ('2', 2, 'Diamond')]))
+
+class bar(foo):
+    def __init__(self):
+        super().__init__()
+        self.b = 2
+
+    def __str__(self):
+        return "__str__() of bar called"
+
+
+A = foo()
+B = bar()
+
+
+print(A.__class__.__name__)
+print(B.__class__.__name__)
+
+a = str(A)
+print(str(B) + a)
