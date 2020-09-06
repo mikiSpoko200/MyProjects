@@ -20,6 +20,13 @@ DEFAULT_DECK_NA = [('2', 2, 'Diamond'), ('3', 3, 'Diamond'), ('4', 4, 'Diamond')
                          ('8', 8, 'Heart'), ('9', 9, 'Heart'), ('10', 10, 'Heart'), ('Jack', 10, 'Heart'),
                          ('Queen', 10, 'Heart'), ("King", 10, 'Heart')]
 
+
+DEFAULT_TESTS = [('Ace', 0, 'Diamond'), ('Ace', 0, 'Diamond'), ('Ace', 0, 'Diamond'), ('Ace', 0, 'Diamond'),
+                 ('Ace', 0, 'Diamond'), ('Ace', 0, 'Diamond'), ('Ace', 0, 'Diamond'), ('Ace', 0, 'Diamond'),
+                 ('Ace', 0, 'Diamond'), ('Ace', 0, 'Diamond'), ('Ace', 0, 'Diamond'), ('Ace', 0, 'Diamond'),
+                 ('Ace', 0, 'Diamond'), ('Ace', 0, 'Diamond'), ('Ace', 0, 'Diamond'), ('Ace', 0, 'Diamond')]
+
+
 DEFAULT_DECK = [('Ace', 0, 'Diamond'), ('2', 2, 'Diamond'), ('3', 3, 'Diamond'), ('4', 4, 'Diamond'),
                    ('5', 5, 'Diamond'), ('6', 6, 'Diamond'), ('7', 7, 'Diamond'), ('8', 8, 'Diamond'),
                    ('9', 9, 'Diamond'), ('10', 10, 'Diamond'), ('Jack', 10, 'Diamond'),
@@ -35,25 +42,22 @@ DEFAULT_DECK = [('Ace', 0, 'Diamond'), ('2', 2, 'Diamond'), ('3', 3, 'Diamond'),
                    ('8', 8, 'Heart'), ('9', 9, 'Heart'), ('10', 10, 'Heart'), ('Jack', 10, 'Heart'),
                    ('Queen', 10, 'Heart'), ("King", 10, 'Heart')]
 
-DEFAULT_FLAGS = {
+DEFAULT_FLAGS = [{
 
     "hit": False,
     "DD": False,
     "split": False,
     "insurance": False,
-    "stand": False
+    "stand": False,
+    "blackJack": False
 
-}
-
-DEFAULT_DECK_LEN = 52
-NA_DECK_LEN = 48
-
+}]
 DEFAULT_BET = [10]
 DEFAULT_SCORE = [0]
 DEFAULT_CARDS = [[]]
-DEFAULT_BUDGET = [200]
+DEFAULT_BUDGET = 200
 
 NUM_PLAYERS = 2  # musi być mniejszy niż 8 bo tak
-NUM_DECKS = 1
+NUM_DECKS = 3
 
 BET_MIN = 5
