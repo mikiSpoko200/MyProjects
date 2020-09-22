@@ -16,3 +16,7 @@ def cyan(string):
     return CYAN + string + WHITE
 def magenta(string):
     return MAGENTA + string + WHITE
+def blue(string):
+    return BLUE + string + WHITE
+def white(string):
+    return WHITE + string + WHITE

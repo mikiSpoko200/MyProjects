@@ -1,14 +1,16 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+DEFAULT_BET = [10]
+NUM_PLAYERS = 2  # musi być mniejszy niż 8 bo tak
+NUM_DECKS = 3
 
-from resources import DEFAULT_BET, DEFAULT_CARDS, DEFAULT_SCORE, DEFAULT_BUDGET, \
-    BET_MIN, DEFAULT_FLAGS, NUM_DECKS, NUM_PLAYERS, DEFAULT_DECK
+from resources import DEFAULT_DECK, DEFAULT_CARDS, \
+    DEFAULT_SCORE, DEFAULT_BUDGET, BET_MIN, DEFAULT_FLAGS
 from random import shuffle, choice
 from typing import NewType
 from typing import List, Tuple
 from copy import deepcopy, copy
-import time
 import colours as col
 from os import system, name
 
@@ -124,18 +126,12 @@ class Game:
                 self.draw_hand(hand)
             player.calculate_scores()
             self.show_dealers_card()
-            player.choice(self.dealer, self.draw)
-            player.choice_processing_functions()
-            input("Press 'enter' to select next player.")
 
     def next_turn(self) -> None:
         clear()
         for player in self.pllst:
             if player.hands_nt:
                 self.show_dealers_card()
-                player.choice(self.dealer, self.draw)
-                player.choice_processing_functions()
-                input("Press 'enter' to select next player.")
 
     def run_next_turn(self) -> bool:
         run = 0
@@ -152,11 +148,6 @@ class Game:
         self.dealer.draw_until_17_or_higher(self.draw)
         self.determine_round_outcome()
         self.CENR()
-        choose = input("Press 'enter' to continue.\nType :\n'reset' to restart the game.\n'quit' to quit the game.\n")
-        if choose == "reset":
-            restart()
-        if choose == "quit":
-            exit()
 
     def first_round(self) -> None:
         self.subtract_bets_from_budgets()
@@ -164,7 +155,6 @@ class Game:
 
     def next_round(self) -> None:
         if self.cut_reached:
-            print("Cut has been reached - deck is being shuffled")
             self.deck = create_deck()
             self.insert_cut()
         for player in self.pllst:
@@ -257,28 +247,28 @@ class Game:
 
                 for hand in hands_blckjck:
                     pot = hand.win()
-                    player.budget += pot
+                    player.budget[0] += pot
                     outcome = col.magenta(f"    hand {hand.index}") + f" : {hand.score}" + col.green(" > ") + f"{d_score} - "
                     outcome += col.cyan(f"Black Jack! pot {pot}$ = {hand.bet}$ * 2,5")
                     print(outcome)
 
                 for hand in hands_win:
                     pot = hand.win()
-                    player.budget += pot
+                    player.budget[0] += pot
                     outcome = col.magenta(f"    hand {hand.index}") + f" : {hand.score}" + col.green(" > ") + f"{d_score} - "
                     outcome += col.green(f'wins {pot}$')
                     print(outcome)
 
                 for hand in hands_draw:
                     pot = hand.draw()
-                    player.budget += pot
+                    player.budget[0] += pot
                     outcome = col.magenta(f"    hand {hand.index}") + f" : {hand.score} = {d_score} - " \
                                                                       f"draws bet returned ({hand.bet}$)"
                     print(outcome)
 
                 for hand in hands_loss:
                     pot = hand.loss(self.dealer)
-                    player.budget += pot
+                    player.budget[0] += pot
                     outcome = col.magenta(f"    hand {hand.index}") + f" : {hand.score}" + col.red(" < ") + f"{d_score} - "
                     if pot == 0:
                         outcome += col.red(f"loses")
@@ -306,7 +296,6 @@ class Game:
             for hand in player.hands_nt:
                 player.budget -= hand.bet
         print("Bets has been subtracted form budgets.")
-
 
 
 class HandDealer:
@@ -430,7 +419,7 @@ class Player:
 
     def DD(self, hand, draw):
         if self.can_afford_new_bet(hand):
-            self.budget -= hand.bet
+            self.budget[0] -= hand.bet
             draw(hand)
             self.calculate_scores()
             hand.bet *= 2
@@ -459,64 +448,19 @@ class Player:
 
     def insure(self, hand):
         if self.can_afford_insurance(hand):
-            self.budget -= hand.bet * 0.5
+            self.budget[0] -= hand.bet * 0.5
             hand.flags["insurance"] = True
         else:
             print(f"{self.name} : Hand {hand.index} cannot afford an insurance.")
 
     def can_afford_insurance(self, hand):
-        return hand.bet * 0.5 <= self.budget
+        return hand.bet * 0.5 <= self.budget[0]
 
     def can_afford_new_bet(self, hand):
-        return hand.bet <= self.budget
+        return hand.bet <= self.budget[0]
 
     def can_afford_new_round(self):
         return self.budget >= BET_MIN
-
-    def choice(self, dealer, draw):
-        for hand in self.hands_nt:
-            run = True
-            print(col.red(f"{self.name}") + " : ")
-            print(f"    budget : {self.budget}$")
-            mess = col.magenta(f"    hand {hand.index} ") + f":\n       score : {hand.score}"
-            mess += f"{len(self.aces)}x Ace" if self.aces else ""
-            print(mess)
-            print(f"       bet : {hand.bet}$")
-            print(f"       cards : {hand.cards}")
-            while run:
-                choice = input()
-                if choice == "hit":
-                    if hand.can_hit():
-                        self.hit(hand, draw)
-                        run = False
-                    else:
-                        print(f"This hand can't hit.")
-                elif choice == "stand":
-                    if hand.can_stand():
-                        self.stand(hand)
-                        run = False
-                    else:
-                        print(f"This hand can't stand.")
-                elif choice == "split":
-                    if hand.can_split():
-                        self.split(hand)
-                        run = False
-                    else:
-                        print(f"This hand can't split.")
-                elif choice == "double down":
-                    if hand.can_DD():
-                        self.DD(hand, draw)
-                        run = False
-                    else:
-                        print(f"This hand can't DD.")
-                elif choice == "insurance" or choice == "insure":
-                    if hand.can_insure(dealer):
-                        self.insure(hand)
-                        run = False
-                    else:
-                        print(f"This hand can't use insurance.")
-                else:
-                    print("Invalid input please try again.")
 
     def choice_processing_functions(self):
         self.check_for_split()
@@ -604,13 +548,5 @@ class Dealer:
             draw(self.hand)
             print(f"Dealer draws {self.hand.cards[-1]}")
             self.calculate_score()
-            time.sleep(2)
         else:
             print(f"Dealer's final cards and score : {self.hand.cards} : {self.hand.score}")
-
-
-def main():
-    game_loop()
-
-
-main()
