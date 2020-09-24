@@ -1,0 +1,18 @@
+Algebra liniowa 4 5 
+Analiza matematyczna 5 7 
+Eksploracja danych 4,5 2 
+Fizyka 1 5 6 
+Projektowanie konstrukcji z rysunkiem technicznym 5 3 
+Wprowadzenie do automatyki i robotyki 5 3 
+Wstęp do informatyki 5 3
+
+Elektronika cyfrowa 4,5 4 
+Fizyka 2 5 6 
+Inżynieria procesów produkcyjnych 4 1 
+Język angielski 5,0
+Narzędzia pracy grupowej 5 2 
+Programowanie strukturalne i obiektowe 5 4 
+Prototypowanie konstrukcji w technice druku 3D i CNC 4 3 
+Rachunek prawdopodobieństwa i statystyka 4,5 5 
+Równania różniczkowe 5 3
+Teoria obwodów 4,5 3
